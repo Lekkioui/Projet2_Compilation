@@ -1,0 +1,136 @@
+options {
+    STATIC = false;
+}
+
+PARSER_BEGIN(Projet1Parser)
+package essai2;
+
+import java.util.*;
+import java.io.*;
+
+public class Projet1Parser {
+    private double X;
+    private double Y;
+    private double lastResult;
+
+    public Projet1Parser() {
+        this.X = 0;
+        this.Y = 0;
+        this.lastResult = 0;
+    }
+
+    public void setVariable(String var, double value) {
+        if (var.equals("X")) {
+            this.X = value;
+        } else if (var.equals("Y")) {
+            this.Y = value;
+        }
+    }
+
+    public double getVariable(String var) {
+        if (var.equals("X")) {
+            return this.X;
+        } else if (var.equals("Y")) {
+            return this.Y;
+        }
+        return 0;
+    }
+
+    public void afficher(double valeur) {
+        this.lastResult = valeur;
+        System.out.printf("(X = %.1f ; Y = %.1f) Résultat = %.1f%n", 
+            this.X, this.Y, this.lastResult);
+    }
+}
+PARSER_END(Projet1Parser)
+
+SKIP : {
+    " " | "\t" | "\n" | "\r"
+}
+
+TOKEN : {
+    < ASSIGN : ":=" > |
+    < SEMICOLON : ";" > |
+    < LPAREN : "(" > |
+    < RPAREN : ")" > |
+    < NUMBER : (["0"-"9"])+ (["." ] (["0"-"9"])+)? > |
+    < PLUS : "+" > |
+    < MINUS : "-" > |
+    < TIMES : "*" > |
+    < DIVIDE : "/" > |
+    < DISPLAY : "afficher" > |
+    < IDENTIFIER : (["a"-"z","A"-"Z"])+ >
+}
+
+void Program() : {
+    Token t;
+}
+{
+    (Statement())* <EOF>
+}
+
+void Statement() : {
+}
+{
+    (Assignment() | Display()) <SEMICOLON>
+}
+
+void Assignment() : {
+    Token t;
+    double value;
+}
+{
+    t = <IDENTIFIER> <ASSIGN> value = Expression()
+    {
+        setVariable(t.image, value);
+    }
+}
+
+void Display() : {
+    double result;
+}
+{
+    <DISPLAY> <LPAREN> result = Expression() <RPAREN>
+    {
+        afficher(result);
+    }
+}
+
+double Expression() : {
+    double value;
+    double term;
+}
+{
+    value = Term()
+    (
+        <PLUS> term = Term() { value += term; }
+      | <MINUS> term = Term() { value -= term; }
+    )*
+    { return value; }
+}
+
+double Term() : {
+    double value;
+    double factor;
+}
+{
+    value = Factor()
+    (
+        <TIMES> factor = Factor() { value *= factor; }
+      | <DIVIDE> factor = Factor() { value /= factor; }
+    )*
+    { return value; }
+}
+
+double Factor() : {
+    Token t;
+    double value;
+}
+{
+    (
+        t = <NUMBER> { value = Double.parseDouble(t.image); }
+      | t = <IDENTIFIER> { value = getVariable(t.image); }
+      | <LPAREN> value = Expression() <RPAREN>
+    )
+    { return value; }
+}
